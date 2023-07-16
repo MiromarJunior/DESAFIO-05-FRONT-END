@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getApiTransferencia, getApiTransferenciaSaldo } from "./transferenciaService";
-import { TextField } from "@mui/material";
+import { Pagination, Stack, TextField, Typography } from "@mui/material";
 import { dataBRCompleta, valorBR } from "../../service/serviceBanco";
+
 
 interface ContaProps {
     idConta: number;
@@ -11,7 +12,9 @@ interface ContaProps {
 }
 
 interface TransferenciaProps {
-    conta: ContaProps;
+    
+  
+   conta: ContaProps;
     dataInicio: string;
     dataFim: string;
     nomeOperadorTransacao: string;
@@ -19,9 +22,10 @@ interface TransferenciaProps {
     id: number;
     tipo: string;
     valor: number;
+    totalElements:number;
+
 
 }
-
 
 
 
@@ -31,27 +35,53 @@ export const Transferencia = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { idConta } = location.state as { idConta: number };
-    const [lista, setLista] = useState<TransferenciaProps[]>([]);
+    const [lista, setLista] = useState([]);
+
+    const [page, setPage] = useState(1);
+    
+    const [totalPages,setTotalPages] = useState(1);
+    const dataInicialRef = useRef<HTMLInputElement>(null);
+    const dataFinalRef = useRef<HTMLInputElement>(null);
+    const nomeOperadorTransacaoRef = useRef<HTMLInputElement>(null);
+    const [saldo, setSaldo] = useState<number>(0);
+    const saldoNoPerido = valorBR(lista.reduce((acc, v:TransferenciaProps) => acc + v.valor, 0));
 
 
+  
+    const handleChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+      setPage(value);
+    
+    };
+    useEffect(() => {   
+        if(lista.length > 0){
+            buscaTransferencia();
+        }       
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [lista.length, page]);
+      
+console.log(lista)
 
     const buscaTransferencia = () => {
         const dados = {
+            page: page -1 , size:10,
             idConta,
             dataInicio: dataInicialRef.current?.value,
             dataFim: dataFinalRef.current?.value,
-            nomeOperadorTransacao: nomeOperadorTransacaoRef.current?.value
-        }
-
-        getApiTransferencia<TransferenciaProps>(dados, "transferencia/conta").then((resp) => {
-            setLista(resp ? resp : []);
-
+            nomeOperadorTransacao: nomeOperadorTransacaoRef.current?.value            
+        } 
+        getApiTransferencia(dados, "transferencia/conta").then((resp) => { 
+    
+     
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+        setLista(resp.content);   
+             
+           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+           setTotalPages(resp.totalPages)       
         }).catch((error) => {
             console.error(error);
         })
 
     }
-    const [saldo, setSaldo] = useState<number>(0);
 
     useEffect(() => {
         getApiTransferenciaSaldo({}, `transferencia/conta/saldo/${idConta}`).then((resp) => {
@@ -66,13 +96,6 @@ export const Transferencia = () => {
         navigate("/conta");
     }
 
-
-
-    const dataInicialRef = useRef<HTMLInputElement>(null);
-    const dataFinalRef = useRef<HTMLInputElement>(null);
-    const nomeOperadorTransacaoRef = useRef<HTMLInputElement>(null);
-
-    const saldoNoPerido = valorBR(lista.reduce((acc, v) => acc + v.valor, 0));
     return (
 
         <div className="container">
@@ -91,8 +114,8 @@ export const Transferencia = () => {
                     label={"Data de Início"}
                     variant="outlined" InputLabelProps={{ shrink: true }}
                     id="dataInicial"
-                    required
-                    sx={{ minWidth: "30%", margin: "1rem" }}
+                    required                   
+                    sx={{ minWidth: "25%", margin: "1rem" }}
                 />
 
                 <TextField
@@ -102,7 +125,7 @@ export const Transferencia = () => {
                     variant="outlined" InputLabelProps={{ shrink: true }}
                     id="dataFim"
                     required
-                    sx={{ minWidth: "30%", margin: "1rem" }}
+                    sx={{ minWidth: "25%", margin: "1rem" }}
                 />
 
                 <TextField
@@ -112,7 +135,7 @@ export const Transferencia = () => {
                     variant="outlined" InputLabelProps={{ shrink: true }}
                     id="nomeOperadorTransacao"
                     required
-                    sx={{ minWidth: "30%", margin: "1rem" }}
+                    sx={{ minWidth: "39%", margin: "1rem" }}
                 />
 
             </div>
@@ -129,8 +152,8 @@ export const Transferencia = () => {
                 <table className="table table-hover  table-bordered ">
                     <thead>
                         <tr>
-                            <th>Saldo Total : {valorBR(saldo)}</th>
-                            <th>Saldo no Período Total :  {saldoNoPerido}</th>
+                            <th colSpan={2}>Saldo Total : {valorBR(saldo)}</th>
+                            <th colSpan={2}>Saldo no Período Total :  {saldoNoPerido}</th>
                         </tr>
                         <tr>
                             <th>Data da Transferência</th>
@@ -140,16 +163,25 @@ export const Transferencia = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {lista.map((l) =>
+                     
+                        {
+                        lista.map((l:TransferenciaProps) =>
                             <tr key={l.id}>
                                 <td>{dataBRCompleta(l.dataTransferencia)}</td>
                                 <td>{valorBR(l.valor)}</td>
                                 <td>{l.tipo}</td>
                                 <td>{l.nomeOperadorTransacao}</td>
                             </tr>
+                            
                         )}
+                    
+
                     </tbody>
                 </table>
+                <Stack spacing={2}>
+      <Typography>Page: {page}</Typography>
+      <Pagination color="primary" count={totalPages} page={page} onChange={handleChange} />
+    </Stack>
 
             </div>
 
