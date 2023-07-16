@@ -1,12 +1,14 @@
 import TextField from "@mui/material/TextField/TextField"
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { getApiConta } from "./contaService";
 import { useNavigate } from "react-router-dom";
+
 
 
 export const Conta = () => {
     const contaRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+
 
     const buscaConta =  (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,7 +22,7 @@ export const Conta = () => {
             }
             
            }).catch((error)=>{
-            console.log(error);
+            console.error(error);
            })
         
       };
@@ -46,7 +48,10 @@ export const Conta = () => {
                 <button form="formConta" type="submit" className="botaoPesquisa">
                     PESQUISAR CONTA BANCARIA
                 </button>
+
             </div>
+            
+            
         </div>
     )
 }

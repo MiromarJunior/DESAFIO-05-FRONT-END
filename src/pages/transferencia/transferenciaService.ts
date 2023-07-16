@@ -15,3 +15,15 @@ export const getApiTransferencia = async<T>(data:object,uri: string) => {
     }
   };
   
+
+  export const getApiTransferenciaSaldo = async(data:object,uri: string) => {
+    try {
+      const response = await axios.get(`${baseURL}${uri}`,{params : data});
+      return response.data as number;
+    } catch (error) {
+      console.error(error);
+      alert(error);
+      return false;
+    }
+  };
+
